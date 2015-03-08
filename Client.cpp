@@ -77,10 +77,10 @@ int tcp_client::do_connect(char* address, int port) {
 
 int tcp_client::do_send(char* data, int size) {
 	if (size > data_size) {
-		perror("La cadena de caracteres supera el maximo tamaño posible.");
+		perror("La cadena de caracteres supera el maximo tamaño permitido.");
 		return -1;
 	}
-	if (send(sock_fd, data, strlen(data), 0) == -1) {
+	if (send(sock_fd, data, size, 0) == -1) {
 		perror("Envio fallido.");
 		return -1;
 	}
@@ -89,10 +89,10 @@ int tcp_client::do_send(char* data, int size) {
 
 int tcp_client::do_recv(char** data, int size) {
 	if (size < data_size) {
-		perror("La cadena de caracteres es menor que el tamaño requerido.");
+		perror("La cadena de caracteres es menor que el minimo tamaño requerido.");
 		return -1;
 	}
-	if (recv(sock_fd, *data, data_size, 0) == -1) {
+	if (recv(sock_fd, *data, size, 0) == -1) {
 		perror("Recepcion fallida.");
 		return -1;
 	}
@@ -143,7 +143,7 @@ int main(int argc, char** argv){
 	while (1){
 		cin>>buffer;
 		n = strlen(buffer);
-		if (n == 1) break;
+		if (n == 0) break;
 		if (conexion.do_send(buffer, n) == 0) {
 			cout<<"Mensaje enviado"<<endl;
 		}
