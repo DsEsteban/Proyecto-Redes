@@ -7,96 +7,170 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
+#include <pthread.h>
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#define BUFF_SIZE 1024
+
 using namespace std;
 
 class tcp_client {
 	private:
-		struct sockaddr_in sock_addr;
-		char server_addr[32];
 		int data_size;
-		int sock_fd;
-		int port;
+		int sock_fd_in;		// Fd para recibir msgs
+		int sock_fd_out;	// Fd para enviar msgs
 	public:
-		tcp_client(int size);
+		tcp_client();
 		~tcp_client();
 		int do_connect(char* address, int port);
+		int do_listen( char* address, int port);
 		int do_send(char* data,  int size);
-		int do_recv(char** data, int size);
+		int do_recv(char* data,  int size);
 };
 
-tcp_client::tcp_client(int size = 1024) {
-	data_size = size;
-	sock_fd = -1;
+tcp_client::tcp_client () {
+	data_size   = 1024;
+	sock_fd_in  = -1;
+	sock_fd_out = -1;
 }
 
 tcp_client::~tcp_client() {
-	close(sock_fd);
+	close(sock_fd_in);
+	close(sock_fd_out);
 }
 
 int tcp_client::do_connect(char* address, int port) {
+	sockaddr_in sock_addr;
 	
 	/* Se crea un socket si antes no ha sido creado */
-	if (sock_fd == -1) {
-		sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock_fd_out == -1) {
+		sock_fd_out = socket(AF_INET, SOCK_STREAM, 0);
+		sock_fd_in = sock_fd_out;
 		
 		/* Capturamos el error al crear el socket */
-		if (sock_fd == -1) {
-			perror("No se pudo crear el Socket.");
+		if (sock_fd_out == -1) {
+			cout<<"Falla al crear el Socket."<<endl;
 			return -1;
-		}
-		cout<<"Socket creado con exito"<<endl;
+		} else
+			cout<<"Socket creado con exito."<<endl;
+		
 	} else {
-		/* Si ya existe una conexion se libre y se crea otra*/
-		close(sock_fd);
-		sock_fd = -1;
-		return do_connect(address, port);
+		cout<<"Error ya existe una conexion."<<endl;
+		return -1;
 	}
 
 	/* Configuramos la conexion con el servidor */
 	sock_addr.sin_family      = AF_INET;                // Familia de direcciones para IPv4
 	sock_addr.sin_port        = htons(port);            // Usa orden de bytes de la red
-	sock_addr.sin_addr.s_addr = inet_addr(address);     // String a Decimal
+	sock_addr.sin_addr.s_addr = inet_addr(address);     // String a long decimal
 	
-	/* Capturamos si el formato de la dirección ip no es correcto */
+	/* Capturamos el error si el formato de la dirección ip no es correcto */
 	if (sock_addr.sin_addr.s_addr == -1) {
-		perror("Formato ip invalido.");
+		cout<<"Formato direccion invalido."<<endl;
 		return -1;
 	}
 	
-	if (connect(sock_fd, (struct sockaddr*) &sock_addr, sizeof(sock_addr)) == -1) {
-		perror("Conexion rechazada por el servidor.");
+	if (connect(sock_fd_out, (sockaddr*) &sock_addr, sizeof(sock_addr)) == -1) {
+		cout<<"Conexion rechazada por el servidor."<<endl;
 		return -1;
 	}
+	
 	return 0;
 }
+
+
+//int tcp_client::do_listen(char* address, int port) {
+//	sockaddr_in sock_addr;
+	
+	/* Se crea un socket si antes no ha sido creado */
+//	if (sock_fd_out == -1) {
+//		sock_fd_out = socket(AF_INET, SOCK_STREAM, 0);
+		
+		/* Capturamos el error al crear el socket */
+//		if (sock_fd_out == -1) {
+//			cout<<"Falla al crear el Socket."<<endl;
+//			return -1;
+//		} else
+//			cout<<"Socket creado con exito."<<endl;
+		
+//	} else {
+//		cout<<"Ya existe una conexion."<<endl;
+//		return -1;
+//	}
+
+	/* Configuramos la conexion con el servidor */
+//	sock_addr.sin_family      = AF_INET;                // Familia de direcciones para IPv4
+//	sock_addr.sin_port        = htons(port);            // Usa orden de bytes de la red
+//	sock_addr.sin_addr.s_addr = inet_addr(address);     // String a long decimal
+	
+	/* Capturamos si el formato de la dirección ip no es correcto */
+//	if (sock_addr.sin_addr.s_addr == -1) {
+//		cout<<"Formato direccion invalido."<<endl;
+//		return -1;
+//	}
+	
+	/* Se le  asocia el puerto al filedescriptor */
+//	if (bind(sock_fd_out, (sockaddr*) &sock_addr, sizeof(sock_addr)) == -1) {
+//		cout<<"Error al asociar un puerto al socket."<<endl;
+//		return -1;
+//	}
+	
+	/* Se le  asocia el puerto al filedescriptor */
+//	if (listen(sock_fd, 1) == -1) {
+//		cout<<"Error al colocar el puerto en modo de escucha."<<endl;
+//		return -1;
+//	}
+//	return 0;
+//}
 
 int tcp_client::do_send(char* data, int size) {
 	if (size > data_size) {
-		perror("La cadena de caracteres supera el maximo tamaño permitido.");
+		cout<<"La cadena de caracteres supera el maximo tamaño permitido."<<endl;
 		return -1;
 	}
-	if (send(sock_fd, data, size, 0) == -1) {
-		perror("Envio fallido.");
-		return -1;
-	}
-	return 0;
+	
+	int m = send(sock_fd_out, data, size, 0);
+	if (m == -1)
+		cout<<"Envio fallido."<<endl;
+
+	return m;
 }
 
-int tcp_client::do_recv(char** data, int size) {
+int tcp_client::do_recv(char* data, int size) {
 	if (size < data_size) {
-		perror("La cadena de caracteres es menor que el minimo tamaño requerido.");
+		cout<<"La cadena de caracteres es menor que el minimo tamaño requerido."<<endl;
 		return -1;
 	}
-	if (recv(sock_fd, *data, size, 0) == -1) {
-		perror("Recepcion fallida.");
-		return -1;
+	
+	int m = recv(sock_fd_in, data, size, 0);
+	if (m == -1) {
+		cout<<"Recepcion fallida."<<endl;
+		return m;
 	}
-	return 0;
+	if (m == 0) {
+		cout<<"Conexion caida."<<endl;
+		return m;
+	}
+	data[m] = '\0';
+	return m;
+}
+
+void *send_fun(void *arg) {
+	tcp_client *conexion = (tcp_client*) arg;
+	int num = 0;
+	char buffer[BUFF_SIZE];
+	while(1) {
+		cin>>buffer;
+		num = strlen(buffer);
+		if (num == 0)
+			continue;
+		if ((*conexion).do_send(buffer, num) == -1)
+			cout<<"Mensaje no enviado"<<endl;
+	}
 }
 
 int main(int argc, char** argv){
@@ -104,28 +178,29 @@ int main(int argc, char** argv){
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2,2), &WSAData);
 #endif
-	
+	pthread_t send_thread;
 	tcp_client conexion;
-	char* server_addr;
-	int server_port;
-	int local_port;
-	int n;
-	char buffer[1024];
-	char c;
+	char* server_addr;		// Direccion del servidor
+	int   server_port, local_port;	// Puertos
+	int   flagd = 0;
+	int   flagp = 0;
+	char opt;
 	
-	if (argc < 5) {
-		cout<<"Uso: scs_cli -d <dir> -p <pto_svr> [-l <pto_lcl>].\n"<<endl;
-		return(1);
+	if (argc < 5 || argc > 7) {
+		cout<<"Uso: scs_cli -d <dir> -p <pto_svr> [-l <pto_lcl>]."<<endl;
+		return 1;
 	}
 	
 	opterr = 0;
-	while ((c = getopt (argc, argv, "d:p:l:")) != -1) {
-		switch (c) {
+	while ((opt = getopt (argc, argv, "d:p:l:")) != -1) {
+		switch (opt) {
 			case 'd':
 				server_addr = optarg;
+				flagd = 1;
 				break;
 			case 'p':
 				server_port = strtol(optarg, NULL, 10);
+				flagp = 1;
 				break;
 			case 'l':
 				local_port  = strtol(optarg, NULL, 10);
@@ -133,22 +208,34 @@ int main(int argc, char** argv){
 			case '?':
 				cout<<"Error parametro invalido."<<endl;
 				return(1);
-      }
+			}
 	}
 	
-	
-	conexion.do_connect(server_addr, server_port);
-	
-	/* Se lee de entrada estandar y se envia al servidor */
-	while (1){
-		cin>>buffer;
-		n = strlen(buffer);
-		if (n == 0) break;
-		if (conexion.do_send(buffer, n) == 0) {
-			cout<<"Mensaje enviado"<<endl;
-		}
+	if (!flagd || !flagp) {
+		cout<<"No se encontraron los paramtros requeridos."<<endl;
+		return 1;
 	}
+
+
 	
-	cout<<"Conexion terminada. Programa finalizado\n\n";
+	if (conexion.do_connect(server_addr, server_port) == -1) {
+		cout<<"No se pudo realizar la conexion."<<endl;
+		return 1;
+	} else
+		cout<<"Se ha realizado la conexion con exito."<<endl;
+	
+	sleep(10);
+	pthread_create(&send_thread, NULL, &send_fun, &conexion);
+	
+	int len;
+	char buffer[BUFF_SIZE];
+	
+	while (1) {
+		if (conexion.do_recv(buffer, BUFF_SIZE) > 0) {
+			cout<<"Mensaje recibido: "<<buffer<<endl;
+		} else break;
+	}
+
+	cout<<"Conexion terminada. Programa finalizado.\n\n";
 	return 0;
 }
