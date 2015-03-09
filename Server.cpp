@@ -15,12 +15,20 @@
 
 #define MAX_CONN 200
 #define QUEUE_CONN 20
+#define MAX_MIEMBROS 10
 
 using namespace std;
 
 struct host {
 	int fd;
 	struct sockaddr_in addr;
+};
+
+struct personas_chat {
+	char* user_name;
+	int id;
+	bool es_superusuario;
+	int sala_num;
 };
 
 class tcp_server {
@@ -40,6 +48,110 @@ class tcp_server {
 		int do_send(char* data, int size, int n);
 		int do_recv(char* data, int size, int n);
 };
+
+class sala {
+	private:
+		char* nombre_sala;
+		int num_sala;
+		struct personas_chat* miembros[MAX_MIEMBROS];
+		int num_personas;
+		bool habilitada;
+	public:
+		sala(char* nombre_sala, int num);
+		~sala();
+		int agregar_usuario(struct personas_chat* usuario);
+		int eliminar_usuario(struct personas_chat* usuario);
+		int listar_usuarios();
+		int habilitar();
+		int deshabilitar();
+};
+
+// Crear sala
+sala::sala(char* nombre, int num) {
+	nombre_sala = nombre;
+	num_personas = 0;
+	num_sala = num;
+	habilitada = true;
+}
+
+// Eliminar sala
+sala::~sala() {
+	for (int i = 0; i < num_personas; i++) {
+		if (miembros[i] != NULL) {
+			miembros[i]->sala_num = -1;
+			miembros[i] = NULL;
+		}
+	}
+}
+
+// hab_sala
+int sala::habilitar() {
+	if (habilitada == true)
+		return 0;
+	else {
+		habilitada = true;
+		return 1;
+	}	
+}
+
+// deshab_sala
+int sala::deshabilitar() {
+	if (habilitada == false)
+		return 0;
+	else {
+		for (int i = 0; i < num_personas; i++) {
+			if (miembros[i] != NULL) {
+				miembros[i]->sala_num = -1;
+				miembros[i] = NULL;
+			}
+		}
+		habilitada = false;
+		return 1;
+	}	
+}
+
+// entrar
+int sala::agregar_usuario(struct personas_chat* usuario) {
+	if (num_personas == MAX_MIEMBROS)
+		return 0;
+	else	
+		usuario->sala_num = num_sala;
+		miembros[num_personas] = usuario;
+		num_personas += 1;
+		return 1;
+}
+
+// dejar
+int sala::eliminar_usuario(struct personas_chat* usuario) {
+	if (num_personas == 0)
+		return 0;
+	else {
+		for (int i = 0; i < num_personas; i++) {
+			if (miembros[i]->id == usuario->id) {
+				if (i == (num_personas-1)) {
+					usuario->sala_num = -1;
+					miembros[i] = NULL;
+					num_personas -= 1;
+					return 1;
+				} else {
+					usuario->sala_num = -1;
+					miembros[i] = miembros[num_personas-1];
+					miembros[num_personas-1] = NULL;
+					num_personas -= 1;
+					return 1;
+				}
+			}
+		}
+	}	
+}
+
+// ver_usu_salas
+int sala::listar_usuarios() {
+	cout<<"Usuarios de la sala "<<nombre_sala<<endl;
+	for (int i = 0; i < num_personas; i++) {
+		cout<<miembros[i]<<endl;
+	}
+}
 
 tcp_server::tcp_server(int size = 1024) {
 	data_size = size;
@@ -198,8 +310,10 @@ int main(int argc, char** argv){
 	while (1){
 		if (conexion.do_recv(buffer, 1024, client) == 0) {
 			cout<<"Mensaje recibido: "<<buffer<<endl;
-		} else break;
+			cout<<buffer[2]<<endl;
 	}
 	cout<<"Conexion terminada. Programa finalizado\n\n";
 	return 0;
+	
+
 }
