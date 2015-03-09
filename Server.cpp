@@ -104,7 +104,7 @@ int tcp_server::do_listen(int port) {
 int tcp_server::do_accept() {
 	struct host *client = (struct host*) malloc(sizeof(struct host));
 	int size_client = sizeof(client->addr);
-	int sockfd_client = accept(sock_fd, (struct sockaddr*) &(client->addr), &size_client);
+	int sockfd_client = accept(sock_fd, (struct sockaddr*) &(client->addr),(socklen_t*) &size_client);
 	
 	/* Captura del error al crear el socket */
 	if (sockfd_client == -1) {
