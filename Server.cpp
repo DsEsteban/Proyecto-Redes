@@ -147,6 +147,7 @@ class tcp_server {
 		tcp_server(int size);
 		~tcp_server();
 		void do_close(int n);
+		int get_clients();
 		int do_listen(int port);
 		int do_accept();
 		int do_send(char* data, int size, int n);
@@ -170,10 +171,19 @@ tcp_server::~tcp_server() {
 }
 
 void tcp_server::do_close(int n) {
+	if (n < 0 || n >= n_clients) return;
 	if (clients[n] == NULL) return;
 	close(clients[n]->fd);
 	free(clients[n]);
+	clients[n] = NULL;
+	//n_clients--;
+	//if (n != n_clients) clients[n] = clients[n_clients];
+	//clients[n_clients] = NULL;
 }
+
+int tcp_server::get_clients() {
+	return n_clients;
+	}
 
 int tcp_server::do_listen(int port) {
 	sockaddr_in sock_addr;
@@ -214,6 +224,12 @@ int tcp_server::do_listen(int port) {
 }
 
 int tcp_server::do_accept() {
+
+	if (n_clients == MAX_CONN) {
+		cout<<"Se alcanzo el numero maximo de conexiones."<<endl;
+		return 0;
+	}
+	
 	host *client = (host*) malloc(sizeof(host));
 	int size_client = sizeof(client->addr);
 	int sockfd_client = accept(sock_fd, (sockaddr*) &(client->addr),
@@ -221,7 +237,7 @@ int tcp_server::do_accept() {
 	
 	/* Captura del error al crear el socket */
 	if (sockfd_client == -1) {
-		cout<<"Error al crear el Socket para la comunicacion con el cliente."<<endl;
+		cout<<"Error al aceptar la conexion con el cliente."<<endl;
 		free(client);
 		return -1;
 	}
@@ -255,6 +271,7 @@ int tcp_server::do_recv(char* data, int size, int n) {
 	}
 	if (m == 0) {
 		cout<<"Conexion caida."<<endl;
+		do_close(n);
 		return m;
 	}
 	data[m] = '\0';
@@ -329,8 +346,15 @@ int main(int argc, char** argv){
 	pthread_t recv_thread;
 
 	int *client =  (int*) malloc(sizeof(int));
-	/* Se aceptan conexiones mientras se permita */
-	while ((*client = conexion.do_accept()) != -1) {
+	/* Se aceptan conexiones mientras se permita, esto es mientras no se
+	alcance el maximo de conexiones */
+	while (1) {
+		*client = conexion.do_accept();
+		if (*client == -1) break; // Error
+		if (*client ==  0) {	//Numero maximo de conexiones alcanzado
+			sleep(10);
+			continue;
+		}
 		pthread_create(&recv_thread, NULL, &recv_fun, client);
 		client =  (int*) malloc(sizeof(int));
 	}
