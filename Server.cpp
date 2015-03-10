@@ -310,7 +310,7 @@ int main(int argc, char** argv){
 	while (1){
 		if (conexion.do_recv(buffer, 1024, client) == 0) {
 			cout<<"Mensaje recibido: "<<buffer<<endl;
-			cout<<buffer[2]<<endl;
+			cout<<buffer[2]<<endl
 	}
 	cout<<"Conexion terminada. Programa finalizado\n\n";
 	return 0;

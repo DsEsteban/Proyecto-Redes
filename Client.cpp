@@ -82,51 +82,6 @@ int tcp_client::do_connect(char* address, int port) {
 	return 0;
 }
 
-
-//int tcp_client::do_listen(char* address, int port) {
-//	sockaddr_in sock_addr;
-	
-	/* Se crea un socket si antes no ha sido creado */
-//	if (sock_fd_out == -1) {
-//		sock_fd_out = socket(AF_INET, SOCK_STREAM, 0);
-		
-		/* Capturamos el error al crear el socket */
-//		if (sock_fd_out == -1) {
-//			cout<<"Falla al crear el Socket."<<endl;
-//			return -1;
-//		} else
-//			cout<<"Socket creado con exito."<<endl;
-		
-//	} else {
-//		cout<<"Ya existe una conexion."<<endl;
-//		return -1;
-//	}
-
-	/* Configuramos la conexion con el servidor */
-//	sock_addr.sin_family      = AF_INET;                // Familia de direcciones para IPv4
-//	sock_addr.sin_port        = htons(port);            // Usa orden de bytes de la red
-//	sock_addr.sin_addr.s_addr = inet_addr(address);     // String a long decimal
-	
-	/* Capturamos si el formato de la dirección ip no es correcto */
-//	if (sock_addr.sin_addr.s_addr == -1) {
-//		cout<<"Formato direccion invalido."<<endl;
-//		return -1;
-//	}
-	
-	/* Se le  asocia el puerto al filedescriptor */
-//	if (bind(sock_fd_out, (sockaddr*) &sock_addr, sizeof(sock_addr)) == -1) {
-//		cout<<"Error al asociar un puerto al socket."<<endl;
-//		return -1;
-//	}
-	
-	/* Se le  asocia el puerto al filedescriptor */
-//	if (listen(sock_fd, 1) == -1) {
-//		cout<<"Error al colocar el puerto en modo de escucha."<<endl;
-//		return -1;
-//	}
-//	return 0;
-//}
-
 int tcp_client::do_send(char* data, int size) {
 	if (size > data_size) {
 		cout<<"La cadena de caracteres supera el maximo tamaño permitido."<<endl;
