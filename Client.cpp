@@ -21,7 +21,7 @@ using namespace std;
 class tcp_client {
 	private:
 		int data_size;
-		int sock_fd;		// Fd para recibir msgs
+		int sock_fd;
 	public:
 		tcp_client();
 		~tcp_client();
@@ -37,13 +37,12 @@ tcp_client::tcp_client () {
 
 tcp_client::~tcp_client() {
 	close(sock_fd);
-	close(sock_fd);
 }
 
 int tcp_client::do_connect(char* address, int server_port, int local_port) {
 	sockaddr_in sock_addr;
 	
-	/* Se crea un socket si antes no ha sido creado */
+	/* Se verifica si ya el socket fue creado */
 	if (sock_fd == -1) {
 		sock_fd = socket(AF_INET, SOCK_STREAM, 0);
 		
@@ -75,7 +74,7 @@ int tcp_client::do_connect(char* address, int server_port, int local_port) {
 	}
 
 	/* Configuramos la conexion con el servidor */
-	memset(&sock_addr, 0, sizeof(struct sockaddr_in));
+	memset(&sock_addr, 0, sizeof(sockaddr_in));
 	sock_addr.sin_family      = AF_INET;                // Familia de direcciones para IPv4
 	sock_addr.sin_port        = htons(server_port);            // Usa orden de bytes de la red
 	sock_addr.sin_addr.s_addr = inet_addr(address);     // String a long decimal

@@ -19,34 +19,11 @@
 
 using namespace std;
 
-struct host {
-	int fd;
-	struct sockaddr_in addr;
-};
-
 struct personas_chat {
 	char* user_name;
 	int id;
 	bool es_superusuario;
 	int sala_num;
-};
-
-class tcp_server {
-	private:
-		struct host *clients[MAX_CONN];
-		struct sockaddr_in sock_addr;
-		int n_clients;
-		int data_size;
-		int sock_fd;
-		int port;
-	public:
-		tcp_server(int size);
-		~tcp_server();
-		void do_close(int n);
-		int do_listen(int port);
-		int do_accept();
-		int do_send(char* data, int size, int n);
-		int do_recv(char* data, int size, int n);
 };
 
 class sala {
@@ -153,6 +130,28 @@ int sala::listar_usuarios() {
 	}
 }
 
+struct host {
+	int fd;
+	struct sockaddr_in addr;
+};
+
+class tcp_server {
+	private:
+		struct host *clients[MAX_CONN];
+		int n_clients;
+		int data_size;
+		int sock_fd;
+		int port;
+	public:
+		tcp_server(int size);
+		~tcp_server();
+		void do_close(int n);
+		int do_listen(int port);
+		int do_accept();
+		int do_send(char* data, int size, int n);
+		int do_recv(char* data, int size, int n);
+};
+
 tcp_server::tcp_server(int size = 1024) {
 	data_size = size;
 	n_clients = 0;
@@ -176,25 +175,25 @@ void tcp_server::do_close(int n) {
 }
 
 int tcp_server::do_listen(int port) {
+	sockaddr_in sock_addr;
 	
-	/* Se crea un socket si antes no ha sido creado */
+	/* Se verifica si ya el socket fue creado */
 	if (sock_fd == -1) {
 		sock_fd = socket(AF_INET, SOCK_STREAM, 0);
 		
 		/* Capturamos el error al crear el socket */
 		if (sock_fd == -1) {
-			cout<<"No se pudo crear el Socket"<<endl;
+			cout<<"Falla al crear el Socket."<<endl;
 			return -1;
 		}
 		cout<<"Socket creado con exito"<<endl;
 	} else {
-		/* Si ya existe una conexion se libera y se crea otra*/
-		close(sock_fd);
-		sock_fd = -1;
-		return do_listen(port);
+		cout<<"Error ya existe una conexion."<<endl;
+		return -1;
 	}
 
 	/* Configuramos la conexion con el servidor */
+	memset(&sock_addr, 0, sizeof(sockaddr_in));
 	sock_addr.sin_family      = AF_INET;                // Familia de direcciones para IPv4
 	sock_addr.sin_port        = htons(port);            // Usa orden de bytes de la red
 	sock_addr.sin_addr.s_addr = INADDR_ANY;             // Escuchamos en todas las ip
@@ -205,7 +204,7 @@ int tcp_server::do_listen(int port) {
 		return -1;
 	}
 	
-	/* Se le  asocia el puerto al filedescriptor */
+	/* Se coloca en modo de escucha */
 	if (listen(sock_fd, QUEUE_CONN) == -1) {
 		cout<<"Error al colocar el puerto en modo de escucha."<<endl;
 		return -1;
@@ -214,9 +213,10 @@ int tcp_server::do_listen(int port) {
 }
 
 int tcp_server::do_accept() {
-	struct host *client = (struct host*) malloc(sizeof(struct host));
+	host *client = (host*) malloc(sizeof(host));
 	int size_client = sizeof(client->addr);
-	int sockfd_client = accept(sock_fd, (struct sockaddr*) &(client->addr),(socklen_t*) &size_client);
+	int sockfd_client = accept(sock_fd, (sockaddr*) &(client->addr),
+		(socklen_t*) &size_client);
 	
 	/* Captura del error al crear el socket */
 	if (sockfd_client == -1) {
@@ -234,31 +234,30 @@ int tcp_server::do_send(char* data, int size, int n) {
 		cout<<"La cadena de caracteres supera el maximo tamaño permitido."<<endl;
 		return -1;
 	}
-	if (send(clients[n]->fd, data, size, 0) == -1) {
-		perror("Envio fallido.");
-		return -1;
-	}
-	return 0;
+	int m = send(clients[n]->fd, data, size, 0);
+	if (m == -1)
+		cout<<"Envio fallido."<<endl;
+
+	return m;
 }
 
 int tcp_server::do_recv(char* data, int size, int n) {
-	int m;
 	if (size < data_size) {
 		cout<<"La cadena de caracteres es menor que el minimo tamaño requerido."<<endl;
 		return -1;
 	}
 	
-	m = recv(clients[n]->fd, data, size, 0);
+	int m = recv(clients[n]->fd, data, size, 0);
 	if (m == -1) {
 		cout<<"Recepcion fallida."<<endl;
-		return -1;
+		return m;
 	}
 	if (m == 0) {
 		cout<<"Conexion caida."<<endl;
-		return -1;
+		return m;
 	}
 	data[m] = '\0';
-	return 0;
+	return m;
 }
 
 int main(int argc, char** argv){
