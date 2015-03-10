@@ -187,7 +187,7 @@ int tcp_server::do_listen(int port) {
 			cout<<"Falla al crear el Socket."<<endl;
 			return -1;
 		}
-		cout<<"Socket creado con exito"<<endl;
+		cout<<"Socket creado con exito."<<endl;
 	} else {
 		cout<<"Error ya existe una conexion."<<endl;
 		return -1;
@@ -261,23 +261,21 @@ int tcp_server::do_recv(char* data, int size, int n) {
 	return m;
 }
 
-/* Variable global para facilitar las cosas... */
+/* Variable global */
 tcp_server conexion;
 pthread_mutex_t mutex;
 
 void *recv_fun(void *client) {
 	int *n_client = (int*) client;
-	int num;
+	int len;
 	char buffer[BUFF_SIZE];
 	while(1) {
-		num = conexion.do_recv(buffer, BUFF_SIZE, *n_client);
-		if (num > 0) {
+		len = conexion.do_recv(buffer, BUFF_SIZE, *n_client);
+		if (len > 0) {
 			pthread_mutex_lock(&mutex);
 			cout<<"Mensaje recibido: "<<buffer<<endl;
 			pthread_mutex_unlock(&mutex);
-		}
-		// if (num == 0) conexion caida
-		if (num == -1) break;
+		} else break;
 	}
 	free(n_client);
 	pthread_exit(NULL);
@@ -338,7 +336,7 @@ int main(int argc, char** argv){
 	}
 	
 	cout<<"Programa finalizado.\n\n";
-	pthread_mutex_destroy(&mutex); // Des-inicializa el mutex
 	free(client);
+	pthread_mutex_destroy(&mutex); // Des-inicializa el mutex
 	return 0;
 }

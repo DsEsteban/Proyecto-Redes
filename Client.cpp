@@ -125,17 +125,17 @@ int tcp_client::do_recv(char* data, int size) {
 	return m;
 }
 
-void *send_fun(void *arg) {
-	tcp_client *conexion = (tcp_client*) arg;
-	int num = 0;
+/* Variable global */
+tcp_client conexion;
+
+void *recv_fun(void *) {
+	int len;
 	char buffer[BUFF_SIZE];
 	while(1) {
-		cin>>buffer;
-		num = strlen(buffer);
-		if (num == 0)
-			continue;
-		if ((*conexion).do_send(buffer, num) == -1)
-			cout<<"Mensaje no enviado"<<endl;
+		len = conexion.do_recv(buffer, BUFF_SIZE);
+		if (len > 0) {
+			cout<<"Mensaje recibido: "<<buffer<<endl;
+		} else break;
 	}
 }
 
@@ -144,8 +144,7 @@ int main(int argc, char** argv){
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2,2), &WSAData);
 #endif
-	pthread_t send_thread;
-	tcp_client conexion;
+	pthread_t recv_thread;
 	char* server_addr;		// Direccion del servidor
 	int   server_port = -1;
 	int   local_port  = -1;
@@ -189,16 +188,20 @@ int main(int argc, char** argv){
 	} else
 		cout<<"Se ha realizado la conexion con exito."<<endl;
 	
-	sleep(10);
-	pthread_create(&send_thread, NULL, &send_fun, &conexion);
-	
-	int len;
+	int len, num;
 	char buffer[BUFF_SIZE];
+	pthread_create(&recv_thread, NULL, &recv_fun, NULL);
 	
 	while (1) {
-		if (conexion.do_recv(buffer, BUFF_SIZE) > 0) {
-			cout<<"Mensaje recibido: "<<buffer<<endl;
-		} else break;
+		cin.getline(buffer, BUFF_SIZE);
+		len = strlen(buffer);
+		if (len == 0)
+			continue;
+		num = conexion.do_send(buffer, len);
+		if (num == 0)
+			cout<<"Conexion caida."<<endl;
+		if (num == -1)
+			cout<<"Error: mensaje no enviado."<<endl;
 	}
 
 	cout<<"Conexion terminada. Programa finalizado.\n\n";
