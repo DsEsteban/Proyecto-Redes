@@ -21,34 +21,37 @@
 using namespace std;
 
 struct personas_chat {
-	char* user_name;
 	int id;
-	bool es_superusuario;
 	int sala_num;
+	char* user_name;
+	bool es_superusuario;
 };
 
 class sala {
 	private:
-		char* nombre_sala;
 		int num_sala;
-		struct personas_chat* miembros[MAX_MIEMBROS];
 		int num_personas;
+		char* nombre_sala;
+		personas_chat* miembros[MAX_MIEMBROS];
 		bool habilitada;
 	public:
 		sala(char* nombre_sala, int num);
 		~sala();
-		int agregar_usuario(struct personas_chat* usuario);
-		int eliminar_usuario(struct personas_chat* usuario);
-		int listar_usuarios();
-		int habilitar();
-		int deshabilitar();
+		int agregar_usuario (personas_chat* usuario);
+		int eliminar_usuario(personas_chat* usuario);
+		int numero_usuarios();
+		personas_chat** listar_usuarios();
+		void habilitar();
+		void deshabilitar();
 };
 
 // Crear sala
 sala::sala(char* nombre, int num) {
-	nombre_sala = nombre;
-	num_personas = 0;
+	int n = strlen(nombre);
 	num_sala = num;
+	num_personas = 0;
+	nombre_sala = (char*) malloc(n * sizeof(char));
+	memcpy(nombre_sala, nombre, n);
 	habilitada = true;
 }
 
@@ -60,74 +63,62 @@ sala::~sala() {
 			miembros[i] = NULL;
 		}
 	}
+	free(nombre_sala);
+}
+
+// entrar
+int sala::agregar_usuario(personas_chat* usuario) {
+	if (num_personas == MAX_MIEMBROS || usuario == NULL || !habilitada)
+		return 0;
+	if (usuario->sala_num != -1)
+		return 0;
+
+	usuario->sala_num        = num_sala;
+	miembros[num_personas++] = usuario;
+	return 1;
+}
+
+// dejar
+int sala::eliminar_usuario(personas_chat* usuario) {
+	if (num_personas == 0 || usuario == NULL)
+		return 0;
+	for (int i = 0; i < num_personas; i++)
+		if (miembros[i]->id == usuario->id) {
+			usuario->sala_num = -1;
+			num_personas--;
+			if (i != num_personas)
+				miembros[i] = miembros[num_personas];
+			miembros[num_personas] = NULL;
+		}
+	return 1;
+}
+
+// ver_usu_salas
+int sala::numero_usuarios() {
+	return num_personas;
+}
+
+// ver_usu_sala
+personas_chat** sala::listar_usuarios() {
+	return miembros;
 }
 
 // hab_sala
-int sala::habilitar() {
-	if (habilitada == true)
-		return 0;
-	else {
-		habilitada = true;
-		return 1;
-	}	
+void sala::habilitar() {
+	habilitada = true;
 }
 
 // deshab_sala
-int sala::deshabilitar() {
-	if (habilitada == false)
-		return 0;
-	else {
+void sala::deshabilitar() {
+	if (habilitada) {
 		for (int i = 0; i < num_personas; i++) {
 			if (miembros[i] != NULL) {
 				miembros[i]->sala_num = -1;
 				miembros[i] = NULL;
 			}
 		}
+		num_personas = 0;
 		habilitada = false;
-		return 1;
-	}	
-}
-
-// entrar
-int sala::agregar_usuario(struct personas_chat* usuario) {
-	if (num_personas == MAX_MIEMBROS)
-		return 0;
-	else	
-		usuario->sala_num = num_sala;
-		miembros[num_personas] = usuario;
-		num_personas += 1;
-		return 1;
-}
-
-// dejar
-int sala::eliminar_usuario(struct personas_chat* usuario) {
-	if (num_personas == 0)
-		return 0;
-	else {
-		for (int i = 0; i < num_personas; i++) {
-			if (miembros[i]->id == usuario->id) {
-				if (i == (num_personas-1)) {
-					usuario->sala_num = -1;
-					miembros[i] = NULL;
-					num_personas -= 1;
-					return 1;
-				} else {
-					usuario->sala_num = -1;
-					miembros[i] = miembros[num_personas-1];
-					miembros[num_personas-1] = NULL;
-					num_personas -= 1;
-					return 1;
-				}
-			}
-		}
-	}	
-}
-
-// ver_usu_salas
-int sala::listar_usuarios() {
-	cout<<"Usuarios de la sala "<<nombre_sala<<endl;
-	for (int i = 0; i < num_personas; i++) {
-		cout<<miembros[i]<<endl;
 	}
 }
 
