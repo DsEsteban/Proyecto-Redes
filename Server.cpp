@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define BUFF_SIZE 1024
 #define MAX_CONN 200
 #define QUEUE_CONN 20
 #define MAX_MIEMBROS 10
@@ -260,18 +261,36 @@ int tcp_server::do_recv(char* data, int size, int n) {
 	return m;
 }
 
+/* Variable global para facilitar las cosas... */
+tcp_server conexion;
+pthread_mutex_t mutex;
+
+void *recv_fun(void *client) {
+	int *n_client = (int*) client;
+	int num;
+	char buffer[BUFF_SIZE];
+	while(1) {
+		num = conexion.do_recv(buffer, BUFF_SIZE, *n_client);
+		if (num > 0) {
+			pthread_mutex_lock(&mutex);
+			cout<<"Mensaje recibido: "<<buffer<<endl;
+			pthread_mutex_unlock(&mutex);
+		}
+		// if (num == 0) conexion caida
+		if (num == -1) break;
+	}
+	free(n_client);
+	pthread_exit(NULL);
+}
+
 int main(int argc, char** argv){
 #ifdef __WIN32__
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2,2), &WSAData);
 #endif
-	
-	tcp_server conexion;
 	char* file;
+	char opt;
 	int port;
-	int n;
-	char buffer[1024];
-	char c;
 	int flagb = 0;
 	int flagl = 0;
 	
@@ -281,8 +300,8 @@ int main(int argc, char** argv){
 	}
 	
 	opterr = 0;
-	while ((c = getopt (argc, argv, "b:l:")) != -1) {
-		switch (c) {
+	while ((opt = getopt (argc, argv, "b:l:")) != -1) {
+		switch (opt) {
 			case 'l':
 				port = strtol(optarg, NULL, 10);
 				flagl++;
@@ -302,17 +321,24 @@ int main(int argc, char** argv){
 		return 1;
 	}
 	
-	conexion.do_listen(port);
-	int client = conexion.do_accept();
-	
-	/* Se lee de entrada estandar y se envia al servidor */
-	while (1){
-		if (conexion.do_recv(buffer, 1024, client) == 0) {
-			cout<<"Mensaje recibido: "<<buffer<<endl;
-			cout<<buffer[2]<<endl
-	}
-	cout<<"Conexion terminada. Programa finalizado\n\n";
-	return 0;
-	
+	if (conexion.do_listen(port) == -1) {
+		cout<<"No se establececio el socket en modo escucha."<<endl;
+		return 1;
+	} else
+		cout<<"Se establecio el socket en modo escucha."<<endl;
 
+	pthread_mutex_init(&mutex, NULL); // Inicializamos el mutex
+	pthread_t recv_thread;
+
+	int *client =  (int*) malloc(sizeof(int));
+	/* Se aceptan conexiones mientras se permita */
+	while ((*client = conexion.do_accept()) != -1) {
+		pthread_create(&recv_thread, NULL, &recv_fun, client);
+		client =  (int*) malloc(sizeof(int));
+	}
+	
+	cout<<"Programa finalizado.\n\n";
+	pthread_mutex_destroy(&mutex); // Des-inicializa el mutex
+	free(client);
+	return 0;
 }
