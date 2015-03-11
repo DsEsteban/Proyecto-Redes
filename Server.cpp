@@ -219,20 +219,21 @@ int tcp_server::do_accept() {
 
 	if (n_clients == MAX_CONN) {
 		cout<<"Se alcanzo el numero maximo de conexiones."<<endl;
-		return 0;
+		return -2;
 	}
 	
 	host *client = (host*) malloc(sizeof(host));
 	int size_client = sizeof(client->addr);
 	int sockfd_client = accept(sock_fd, (sockaddr*) &(client->addr),
 		(socklen_t*) &size_client);
-	
+
 	/* Captura del error al crear el socket */
 	if (sockfd_client == -1) {
 		cout<<"Error al aceptar la conexion con el cliente."<<endl;
 		free(client);
 		return -1;
 	}
+
 	client->fd = sockfd_client;
 	clients[n_clients] = client;
 	return n_clients++;
@@ -262,7 +263,6 @@ int tcp_server::do_recv(char* data, int size, int n) {
 		return m;
 	}
 	if (m == 0) {
-		cout<<"Conexion caida."<<endl;
 		do_close(n);
 		return m;
 	}
@@ -299,8 +299,11 @@ void *recv_fun(void *client) {
 	strcat (buffer, cliente.user_name);
 	strcat (buffer, ".\n"); 
 	
+	pthread_mutex_lock(&mutex);
+	cout<<buffer<<endl;
+	pthread_mutex_unlock(&mutex);
+	
 	if (conexion.do_send(buffer, BUFF_SIZE, *n_client) < 1) {
-		cout<<"esto no "<<buffer<<endl;
 		free(n_client);
 		free(cliente.user_name);
 		pthread_exit(NULL);
@@ -312,7 +315,13 @@ void *recv_fun(void *client) {
 			pthread_mutex_lock(&mutex);
 			cout<<cliente.user_name<<": "<<buffer<<endl;
 			pthread_mutex_unlock(&mutex);
-		} else break;
+		} else {
+			pthread_mutex_lock(&mutex);
+			cout<<"El usuario "<<cliente.user_name;
+			cout<<" se ha desconectado."<<endl;
+			pthread_mutex_unlock(&mutex);
+			break;
+		}
 	}
 	(*salas[0]).eliminar_usuario(&cliente);
 	free(n_client);
@@ -372,8 +381,9 @@ int main(int argc, char** argv){
 	alcance el maximo de conexiones */
 	while (1) {
 		*client = conexion.do_accept();
-		if (*client == -1) break; // Error
-		if (*client ==  0) {	//Numero maximo de conexiones alcanzado
+		if (*client == -1) break;
+		//Numero maximo de conexiones alcanzado
+		if (*client == -2) {	
 			sleep(10);
 			continue;
 		}

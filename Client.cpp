@@ -138,6 +138,7 @@ void *recv_fun(void *) {
 			cout<<"Mensaje recibido: "<<buffer<<endl;
 		} else break;
 	}
+	exit(1);
 }
 
 int main(int argc, char** argv){
@@ -198,15 +199,16 @@ int main(int argc, char** argv){
 	cin>>buffer;
 	len = strlen(buffer);
 	
-	while (!regex_match (buffer, regex("[a-zA-Z0-9]+")) || len > 15 || len < 1) {
+	while (!regex_match (buffer, regex("[a-zA-Z0-9]+")) || len > 15 || len < 2) {
 		cout<<"Por favor use solo letras y numeros."<<endl;
-		cout<<"Nombre de usuario no mayor a 15 caracteres."<<endl;
+		cout<<"Nombre de u¡suario no mayor a 15 caracteres."<<endl;
 		cout<<"Ingrese un nombre de usuario: ";
 		cin>>buffer;
 		len = strlen(buffer);
 	}
 	
-	if (conexion.do_send(buffer, len) == -1) {
+	num = conexion.do_send(buffer, len);
+	if (num < 1) {
 		cout<<"Error: mensaje no enviado."<<endl;
 		return 1;
 	}
@@ -216,7 +218,7 @@ int main(int argc, char** argv){
 		len = strlen(buffer);
 		if (len == 0) continue;
 		num = conexion.do_send(buffer, len);
-		if (num == -1) {
+		if (num < 1) {
 			cout<<"Error: mensaje no enviado."<<endl;
 			break;
 		}
