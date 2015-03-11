@@ -273,7 +273,12 @@ void *recv_fun(void *client) {
 		len = conexion.do_recv(buffer, BUFF_SIZE, *n_client);
 		if (len > 0) {
 			pthread_mutex_lock(&mutex);
-			cout<<"Mensaje recibido: "<<buffer<<endl;
+			if (buffer[len-1] == '~') {
+				buffer[len-1] = ' ';
+				cout<<"Tu nombre de usuario es: "<<buffer<<endl;
+			} else {
+				cout<<"Mensaje recibido: "<<buffer<<endl;
+			}	
 			pthread_mutex_unlock(&mutex);
 		} else break;
 	}
