@@ -13,11 +13,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <regex>
 
 #define BUFF_SIZE 1024
 
 using namespace std;
-bool usuario = false;
 
 class tcp_client {
 	private:
@@ -186,35 +186,40 @@ int main(int argc, char** argv){
 	if (conexion.do_connect(server_addr, server_port, local_port) == -1) {
 		cout<<"No se pudo realizar la conexion."<<endl;
 		return 1;
-	} else {
+	} else
 		cout<<"Se ha realizado la conexion con exito."<<endl;
-		cout<<"Ingrese su nombre de usuario."<<endl;
-	}
+
 	int len, num;
 	char buffer[BUFF_SIZE];
 	pthread_create(&recv_thread, NULL, &recv_fun, NULL);
 	
+	cout<<"Bienvenido."<<endl;
+	cout<<"Por favor ingrese su nombre de usuario: ";
+	cin>>buffer;
+	len = strlen(buffer);
+	
+	while (!regex_match (buffer, regex("[a-zA-Z0-9]+")) || len > 15 || len < 1) {
+		cout<<"Por favor use solo letras y numeros."<<endl;
+		cout<<"Nombre de usuario no mayor a 15 caracteres."<<endl;
+		cout<<"Ingrese un nombre de usuario: ";
+		cin>>buffer;
+		len = strlen(buffer);
+	}
+	
+	if (conexion.do_send(buffer, len) == -1) {
+		cout<<"Error: mensaje no enviado."<<endl;
+		return 1;
+	}
+
 	while (1) {
 		cin.getline(buffer, BUFF_SIZE);
 		len = strlen(buffer);
-		if (len == 0)
-			continue;
-		if (usuario == false) {
-			buffer[len] = '~';
-			usuario = true;
-			num = conexion.do_send(buffer, len+1);
-			if (num == 0)
-				cout<<"Conexion caida."<<endl;
-			if (num == -1)
-				cout<<"Error: mensaje no enviado."<<endl;
-		} else {
-			num = conexion.do_send(buffer, len);
-			if (num == 0)
-				cout<<"Conexion caida."<<endl;
-			if (num == -1)
-				cout<<"Error: mensaje no enviado."<<endl;
-		}	
-		
+		if (len == 0) continue;
+		num = conexion.do_send(buffer, len);
+		if (num == -1) {
+			cout<<"Error: mensaje no enviado."<<endl;
+			break;
+		}
 	}
 
 	cout<<"Conexion terminada. Programa finalizado.\n\n";

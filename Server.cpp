@@ -16,6 +16,7 @@
 #define BUFF_SIZE 1024
 #define MAX_CONN 200
 #define QUEUE_CONN 20
+#define MAX_SALAS 10
 #define MAX_MIEMBROS 10
 
 using namespace std;
@@ -272,24 +273,48 @@ int tcp_server::do_recv(char* data, int size, int n) {
 /* Variable global */
 tcp_server conexion;
 pthread_mutex_t mutex;
+sala* salas[MAX_SALAS];
 
 void *recv_fun(void *client) {
 	int *n_client = (int*) client;
 	int len;
 	char buffer[BUFF_SIZE];
+	personas_chat cliente;
+	
+	len = conexion.do_recv(buffer, BUFF_SIZE, *n_client);
+	if (len < 1) {
+		free(n_client);
+		pthread_exit(NULL);
+	}
+
+	cliente.id = 0;
+	cliente.sala_num = -1;
+	cliente.user_name = (char*) malloc(len * sizeof(char));
+	memcpy(cliente.user_name, buffer, len);
+	cliente.es_superusuario = false;
+	
+	(*salas[0]).agregar_usuario(&cliente);
+
+	strcpy (buffer, "Has iniciado sesion como ");
+	strcat (buffer, cliente.user_name);
+	strcat (buffer, ".\n"); 
+	
+	if (conexion.do_send(buffer, BUFF_SIZE, *n_client) < 1) {
+		cout<<"esto no "<<buffer<<endl;
+		free(n_client);
+		free(cliente.user_name);
+		pthread_exit(NULL);
+	}
+	
 	while(1) {
 		len = conexion.do_recv(buffer, BUFF_SIZE, *n_client);
 		if (len > 0) {
 			pthread_mutex_lock(&mutex);
-			if (buffer[len-1] == '~') {
-				buffer[len-1] = ' ';
-				cout<<"Tu nombre de usuario es: "<<buffer<<endl;
-			} else {
-				cout<<"Mensaje recibido: "<<buffer<<endl;
-			}	
+			cout<<cliente.user_name<<": "<<buffer<<endl;
 			pthread_mutex_unlock(&mutex);
 		} else break;
 	}
+	(*salas[0]).eliminar_usuario(&cliente);
 	free(n_client);
 	pthread_exit(NULL);
 }
@@ -340,6 +365,7 @@ int main(int argc, char** argv){
 
 	pthread_mutex_init(&mutex, NULL); // Inicializamos el mutex
 	pthread_t recv_thread;
+	salas[0] = new sala((char*)"Lobby",-1);
 
 	int *client =  (int*) malloc(sizeof(int));
 	/* Se aceptan conexiones mientras se permita, esto es mientras no se
@@ -357,6 +383,7 @@ int main(int argc, char** argv){
 	
 	cout<<"Programa finalizado.\n\n";
 	free(client);
+	free(salas[0]);
 	pthread_mutex_destroy(&mutex); // Des-inicializa el mutex
 	return 0;
 }
