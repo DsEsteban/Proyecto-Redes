@@ -260,4 +260,4 @@ _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace __detail
 } // namespace std
 
-#include "regex_scanner.tcc"
+#include <bits/regex_scanner.tcc>

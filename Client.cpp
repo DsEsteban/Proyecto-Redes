@@ -13,8 +13,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <regex>
-#include "hash.h"
+#include "regex"
+//#include "hash.h"
 
 
 #define BUFF_SIZE 1024
@@ -143,6 +143,50 @@ void *recv_fun(void *) {
 	exit(1);
 }
 
+char* contenido_comando(char* buffer) {
+	char num_comando[3];
+	
+    // Comandos no privilegiados
+	if (strcmp("salir", buffer)==0)
+		memcpy(num_comando, "00",3);
+	else if (strcmp("entrar", buffer)==0)
+	    memcpy(num_comando, "01",3);
+	else if (strcmp(buffer,"dejar")==0)
+	    memcpy(num_comando, "02",3);
+	else if (strcmp(buffer,"ver_salas")==0)
+	    memcpy(num_comando, "03",3);
+	else if (strcmp(buffer,"ver_usuarios")==0)
+	    memcpy(num_comando, "04",3);
+	else if (strcmp(buffer,"ver_usu_salas")==0)
+	    memcpy(num_comando, "05",3);
+	else if (strcmp(buffer,"entrar")==0)
+	    memcpy(num_comando, "06",3);
+	//Comandos privilegiados
+	else if (strcmp(buffer,"crear_usu")==0)
+	    memcpy(num_comando, "10",3);
+	else if (strcmp(buffer,"elim_usu")==0)
+	    memcpy(num_comando, "11",3);
+	else if (strcmp(buffer,"crear_sala")==0)
+	    memcpy(num_comando, "12",3);
+	else if (strcmp(buffer,"elim_sala")==0)
+	    memcpy(num_comando, "13",3);
+	else if (strcmp(buffer,"ver_salas")==0)
+	    memcpy(num_comando, "14",3);
+	else if (strcmp(buffer,"ver_usuarios")==0)
+	    memcpy(num_comando, "15",3);
+	else if (strcmp(buffer,"hab_sala")==0)
+	    memcpy(num_comando, "16",3);
+	else if (strcmp(buffer,"deshab_sala")==0)
+	    memcpy(num_comando, "17",3);
+	else if (strcmp(buffer,"ver_log")==0)
+	    memcpy(num_comando, "18",3);
+	else
+	    memcpy(num_comando, "-1",3);
+	    
+	return num_comando;	
+}
+
+
 int main(int argc, char** argv){
 #ifdef __WIN32__
 	WSADATA WSAData;
@@ -201,14 +245,14 @@ int main(int argc, char** argv){
 	cin>>buffer;
 	
 	/*cambios inicio*/
-		hash* comandos = new hash();
+	//hash* comandos = new hash();
 		
 	/*cambios inicio*/
 	
 	
 	len = strlen(buffer);
 	
-	while (!regex_match (buffer, regex("[a-zA-Z0-9]+")) || len > 15 || len < 2) {
+	while (!regex_match(buffer, regex("(\\w)+")) || len > 15 || len < 2) {
 		cout<<"Por favor use solo letras y numeros."<<endl;
 		cout<<"Nombre de u¡suario no mayor a 15 caracteres."<<endl;
 		cout<<"Ingrese un nombre de usuario: ";
@@ -221,16 +265,26 @@ int main(int argc, char** argv){
 		cout<<"Error: mensaje no enviado."<<endl;
 		return 1;
 	}
-
+	char* numcom;
+	
 	while (1) {
 		cin.getline(buffer, BUFF_SIZE);
 		len = strlen(buffer);
 		if (len == 0) continue;
-		num = conexion.do_send(buffer, len);
-		if (num < 1) {
-			cout<<"Error: mensaje no enviado."<<endl;
-			break;
-		}
+		numcom = contenido_comando(buffer);
+		if (strcmp(numcom,"-1")!=0) {
+		    num = conexion.do_send(numcom, 2);
+		    if (num < 1) {
+				cout<<"Error: mensaje no enviado."<<endl;
+				break;
+			}
+		} else {
+			num = conexion.do_send(buffer, len);
+			if (num < 1) {
+				cout<<"Error: mensaje no enviado."<<endl;
+				break;
+			}
+		}	
 	}
 
 	cout<<"Conexion terminada. Programa finalizado.\n\n";
