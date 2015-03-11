@@ -242,19 +242,21 @@ int main(int argc, char** argv){
 	char buffer[BUFF_SIZE];
 	pthread_create(&recv_thread, NULL, &recv_fun, NULL);
 	
+	cout<<"\n"<<endl;
 	cout<<"Si deseas ingresar al SCS introduce el comando 'conectarse', si no, introduce el comando 'salir'."<<endl;
+	cout<<"\n"<<endl;
 	cin>>buffer;
 	
 	while (strcmp(buffer,"conectarse")!=0 && strcmp(buffer,"salir")!=0 ) {
 		cout<<"No. Si deseas ingresar al SCS introduce el comando 'conectarse', si no, introduce el comando 'salir'."<<endl;
+		cout<<"\n"<<endl;
 		cin>>buffer;
 	}	
 	
 	if (strcmp(buffer,"salir")==0) 
 		return 0;
 	
-	cout<<"Bienvenido."<<endl;
-	cout<<"Utilice el comando 'help' para ver una lista de comandos disponibles."<<endl;
+	cout<<"Bienvenido. Luego de ingresar al SCS si desea ver una lista de comandos disponiblen introduzca 'help'."<<endl;
 	cout<<"Por favor ingrese su nombre de usuario: ";
 	cin>>buffer;
 	
@@ -287,11 +289,23 @@ int main(int argc, char** argv){
 		if (len == 0) continue;
 		numcom = contenido_comando(buffer);
 		if (strcmp(numcom,"-1")!=0) {
-		    num = conexion.do_send(numcom, 2);
-		    if (num < 1) {
-				cout<<"Error: mensaje no enviado."<<endl;
-				break;
-			}
+			if (strcmp(numcom,"07")==0) {
+				cout<<"\n"<<endl;
+				cout<<"Comandos disponibles: "<<endl;
+				cout<<"    - 'salir': ejecuta un logout del SCS."<<endl;
+				cout<<"    - 'entrar': entra a una sala activa en el SCS."<<endl;
+				cout<<"    - 'dejar': sale de la sala del SCS en la cual se encontraba."<<endl;
+				cout<<"    - 'ver_salas': muestra la lista de las salas activas en el SCS."<<endl;
+				cout<<"    - 'ver_usuarios': muestra la lista de usuarios declarados en el SCS."<<endl;
+				cout<<"    - 'ver_usu_salas': muestra la lista actual de usuarios suscritos a una sala del SCS."<<endl;
+				cout<<"\n"<<endl;
+			} else {
+				num = conexion.do_send(numcom, 2);
+				if (num < 1) {
+					cout<<"Error: mensaje no enviado."<<endl;
+					break;
+				}
+			}	
 		} else {
 			num = conexion.do_send(buffer, len);
 			if (num < 1) {
