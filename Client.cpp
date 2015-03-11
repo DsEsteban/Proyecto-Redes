@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <regex>
-#include "hash.h"
+#include "myHash.h"
 
 
 #define BUFF_SIZE 1024
@@ -200,8 +200,29 @@ int main(int argc, char** argv){
 	cout<<"Por favor ingrese su nombre de usuario: ";
 	cin>>buffer;
 	
-	/*cambios inicio*/
-		hash* comandos = new hash();
+	/*Lista de Comandos*/
+		string comando;
+		myHash* comandos = new myHash();
+		comandos.agregar_usuario("conectarse","00");
+		/*comandos.agregar_usuario("salir","01");
+		comandos.agregar_usuario("entrar","02");
+		comandos.agregar_usuario("dejar","03");
+		comandos.agregar_usuario("ver_sala","04");
+		comandos.agregar_usuario("ver_usuarios","05");
+		comandos.agregar_usuario("ver_usu_salas","06");
+		comandos.agregar_usuario("env_mensajes","07");
+		comandos.agregar_usuario("crear_usu","08");
+		comandos.agregar_usuario("elim_usu","09");
+		comandos.agregar_usuario("crear_sala","10");
+		comandos.agregar_usuario("elim_sala","11");
+		comandos.agregar_usuario("ver_salas","12");
+		comandos.agregar_usuario("ver_usuarios","13");
+		comandos.agregar_usuario("hab_sala","14");
+		comandos.agregar_usuario("deshab_sala","15");
+		comandos.agregar_usuario("ver_log","16");
+		
+		string codigo_comando = myHash.get_clave(comando);
+		
 		
 	/*cambios inicio*/
 	
