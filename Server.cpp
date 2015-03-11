@@ -21,34 +21,37 @@
 using namespace std;
 
 struct personas_chat {
-	char* user_name;
 	int id;
-	bool es_superusuario;
 	int sala_num;
+	char* user_name;
+	bool es_superusuario;
 };
 
 class sala {
 	private:
-		char* nombre_sala;
 		int num_sala;
-		struct personas_chat* miembros[MAX_MIEMBROS];
 		int num_personas;
+		char* nombre_sala;
+		personas_chat* miembros[MAX_MIEMBROS];
 		bool habilitada;
 	public:
 		sala(char* nombre_sala, int num);
 		~sala();
-		int agregar_usuario(struct personas_chat* usuario);
-		int eliminar_usuario(struct personas_chat* usuario);
-		int listar_usuarios();
-		int habilitar();
-		int deshabilitar();
+		int agregar_usuario (personas_chat* usuario);
+		int eliminar_usuario(personas_chat* usuario);
+		int numero_usuarios();
+		personas_chat** listar_usuarios();
+		void habilitar();
+		void deshabilitar();
 };
 
 // Crear sala
 sala::sala(char* nombre, int num) {
-	nombre_sala = nombre;
-	num_personas = 0;
+	int n = strlen(nombre);
 	num_sala = num;
+	num_personas = 0;
+	nombre_sala = (char*) malloc(n * sizeof(char));
+	memcpy(nombre_sala, nombre, n);
 	habilitada = true;
 }
 
@@ -60,74 +63,62 @@ sala::~sala() {
 			miembros[i] = NULL;
 		}
 	}
+	free(nombre_sala);
+}
+
+// entrar
+int sala::agregar_usuario(personas_chat* usuario) {
+	if (num_personas == MAX_MIEMBROS || usuario == NULL || !habilitada)
+		return 0;
+	if (usuario->sala_num != -1)
+		return 0;
+
+	usuario->sala_num        = num_sala;
+	miembros[num_personas++] = usuario;
+	return 1;
+}
+
+// dejar
+int sala::eliminar_usuario(personas_chat* usuario) {
+	if (num_personas == 0 || usuario == NULL)
+		return 0;
+	for (int i = 0; i < num_personas; i++)
+		if (miembros[i]->id == usuario->id) {
+			usuario->sala_num = -1;
+			num_personas--;
+			if (i != num_personas)
+				miembros[i] = miembros[num_personas];
+			miembros[num_personas] = NULL;
+		}
+	return 1;
+}
+
+// ver_usu_salas
+int sala::numero_usuarios() {
+	return num_personas;
+}
+
+// ver_usu_sala
+personas_chat** sala::listar_usuarios() {
+	return miembros;
 }
 
 // hab_sala
-int sala::habilitar() {
-	if (habilitada == true)
-		return 0;
-	else {
-		habilitada = true;
-		return 1;
-	}	
+void sala::habilitar() {
+	habilitada = true;
 }
 
 // deshab_sala
-int sala::deshabilitar() {
-	if (habilitada == false)
-		return 0;
-	else {
+void sala::deshabilitar() {
+	if (habilitada) {
 		for (int i = 0; i < num_personas; i++) {
 			if (miembros[i] != NULL) {
 				miembros[i]->sala_num = -1;
 				miembros[i] = NULL;
 			}
 		}
+		num_personas = 0;
 		habilitada = false;
-		return 1;
-	}	
-}
-
-// entrar
-int sala::agregar_usuario(struct personas_chat* usuario) {
-	if (num_personas == MAX_MIEMBROS)
-		return 0;
-	else	
-		usuario->sala_num = num_sala;
-		miembros[num_personas] = usuario;
-		num_personas += 1;
-		return 1;
-}
-
-// dejar
-int sala::eliminar_usuario(struct personas_chat* usuario) {
-	if (num_personas == 0)
-		return 0;
-	else {
-		for (int i = 0; i < num_personas; i++) {
-			if (miembros[i]->id == usuario->id) {
-				if (i == (num_personas-1)) {
-					usuario->sala_num = -1;
-					miembros[i] = NULL;
-					num_personas -= 1;
-					return 1;
-				} else {
-					usuario->sala_num = -1;
-					miembros[i] = miembros[num_personas-1];
-					miembros[num_personas-1] = NULL;
-					num_personas -= 1;
-					return 1;
-				}
-			}
-		}
-	}	
-}
-
-// ver_usu_salas
-int sala::listar_usuarios() {
-	cout<<"Usuarios de la sala "<<nombre_sala<<endl;
-	for (int i = 0; i < num_personas; i++) {
-		cout<<miembros[i]<<endl;
 	}
 }
 
@@ -147,6 +138,7 @@ class tcp_server {
 		tcp_server(int size);
 		~tcp_server();
 		void do_close(int n);
+		int get_clients();
 		int do_listen(int port);
 		int do_accept();
 		int do_send(char* data, int size, int n);
@@ -170,10 +162,19 @@ tcp_server::~tcp_server() {
 }
 
 void tcp_server::do_close(int n) {
+	if (n < 0 || n >= n_clients) return;
 	if (clients[n] == NULL) return;
 	close(clients[n]->fd);
 	free(clients[n]);
+	clients[n] = NULL;
+	//n_clients--;
+	//if (n != n_clients) clients[n] = clients[n_clients];
+	//clients[n_clients] = NULL;
 }
+
+int tcp_server::get_clients() {
+	return n_clients;
+	}
 
 int tcp_server::do_listen(int port) {
 	sockaddr_in sock_addr;
@@ -214,6 +215,12 @@ int tcp_server::do_listen(int port) {
 }
 
 int tcp_server::do_accept() {
+
+	if (n_clients == MAX_CONN) {
+		cout<<"Se alcanzo el numero maximo de conexiones."<<endl;
+		return 0;
+	}
+	
 	host *client = (host*) malloc(sizeof(host));
 	int size_client = sizeof(client->addr);
 	int sockfd_client = accept(sock_fd, (sockaddr*) &(client->addr),
@@ -221,7 +228,7 @@ int tcp_server::do_accept() {
 	
 	/* Captura del error al crear el socket */
 	if (sockfd_client == -1) {
-		cout<<"Error al crear el Socket para la comunicacion con el cliente."<<endl;
+		cout<<"Error al aceptar la conexion con el cliente."<<endl;
 		free(client);
 		return -1;
 	}
@@ -255,6 +262,7 @@ int tcp_server::do_recv(char* data, int size, int n) {
 	}
 	if (m == 0) {
 		cout<<"Conexion caida."<<endl;
+		do_close(n);
 		return m;
 	}
 	data[m] = '\0';
@@ -334,8 +342,15 @@ int main(int argc, char** argv){
 	pthread_t recv_thread;
 
 	int *client =  (int*) malloc(sizeof(int));
-	/* Se aceptan conexiones mientras se permita */
-	while ((*client = conexion.do_accept()) != -1) {
+	/* Se aceptan conexiones mientras se permita, esto es mientras no se
+	alcance el maximo de conexiones */
+	while (1) {
+		*client = conexion.do_accept();
+		if (*client == -1) break; // Error
+		if (*client ==  0) {	//Numero maximo de conexiones alcanzado
+			sleep(10);
+			continue;
+		}
 		pthread_create(&recv_thread, NULL, &recv_fun, client);
 		client =  (int*) malloc(sizeof(int));
 	}
