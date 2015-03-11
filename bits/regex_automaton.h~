@@ -307,4 +307,4 @@ _GLIBCXX_END_NAMESPACE_VERSION
 } // namespace __detail
 } // namespace std
 
-#include "regex_automaton.tcc"
+#include "bits/regex_automaton.tcc"

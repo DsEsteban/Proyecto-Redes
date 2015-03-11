@@ -13,8 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <regex>
-#include "myHash.h"
+#include "regex"
 
 
 #define BUFF_SIZE 1024
@@ -143,6 +142,52 @@ void *recv_fun(void *) {
 	exit(1);
 }
 
+char* contenido_comando(char* buffer) {
+	char num_comando[3];
+	
+    // Comandos no privilegiados
+	if (strcmp("conectarse", buffer)==0)
+		memcpy(num_comando, "00",3);
+	else if (strcmp("salir", buffer)==0)
+	    memcpy(num_comando, "01",3);
+	else if (strcmp(buffer,"entrar")==0)
+	    memcpy(num_comando, "02",3);
+	else if (strcmp(buffer,"dejar")==0)
+	    memcpy(num_comando, "03",3);
+	else if (strcmp(buffer,"ver_salas")==0)
+	    memcpy(num_comando, "04",3);
+	else if (strcmp(buffer,"ver_usuarios")==0)
+	    memcpy(num_comando, "05",3);
+	else if (strcmp(buffer,"ver_usu_salas")==0)
+	    memcpy(num_comando, "06",3);
+	else if (strcmp(buffer,"help")==0)
+	    memcpy(num_comando,"07",3);
+	//Comandos privilegiados
+	else if (strcmp(buffer,"crear_usu")==0)
+	    memcpy(num_comando, "10",3);
+	else if (strcmp(buffer,"elim_usu")==0)
+	    memcpy(num_comando, "11",3);
+	else if (strcmp(buffer,"crear_sala")==0)
+	    memcpy(num_comando, "12",3);
+	else if (strcmp(buffer,"elim_sala")==0)
+	    memcpy(num_comando, "13",3);
+	else if (strcmp(buffer,"ver_salas")==0)
+	    memcpy(num_comando, "14",3);
+	else if (strcmp(buffer,"ver_usuarios")==0)
+	    memcpy(num_comando, "15",3);
+	else if (strcmp(buffer,"hab_sala")==0)
+	    memcpy(num_comando, "16",3);
+	else if (strcmp(buffer,"deshab_sala")==0)
+	    memcpy(num_comando, "17",3);
+	else if (strcmp(buffer,"ver_log")==0)
+	    memcpy(num_comando, "18",3);
+	else
+	    memcpy(num_comando, "-1",3);
+	    
+	return num_comando;	
+}
+
+
 int main(int argc, char** argv){
 #ifdef __WIN32__
 	WSADATA WSAData;
@@ -196,40 +241,30 @@ int main(int argc, char** argv){
 	char buffer[BUFF_SIZE];
 	pthread_create(&recv_thread, NULL, &recv_fun, NULL);
 	
-	cout<<"Bienvenido."<<endl;
-	cout<<"Por favor ingrese su nombre de usuario: ";
+	cout<<"\n"<<endl;
+	cout<<"Si deseas ingresar al SCS introduce el comando 'conectarse', si no, introduce el comando 'salir'."<<endl;
+	cout<<"\n"<<endl;
 	cin>>buffer;
 	
-	/*Lista de Comandos*/
-		string comando;
-		myHash* comandos = new myHash();
-		comandos.agregar_usuario("conectarse","00");
-		/*comandos.agregar_usuario("salir","01");
-		comandos.agregar_usuario("entrar","02");
-		comandos.agregar_usuario("dejar","03");
-		comandos.agregar_usuario("ver_sala","04");
-		comandos.agregar_usuario("ver_usuarios","05");
-		comandos.agregar_usuario("ver_usu_salas","06");
-		comandos.agregar_usuario("env_mensajes","07");
-		comandos.agregar_usuario("crear_usu","08");
-		comandos.agregar_usuario("elim_usu","09");
-		comandos.agregar_usuario("crear_sala","10");
-		comandos.agregar_usuario("elim_sala","11");
-		comandos.agregar_usuario("ver_salas","12");
-		comandos.agregar_usuario("ver_usuarios","13");
-		comandos.agregar_usuario("hab_sala","14");
-		comandos.agregar_usuario("deshab_sala","15");
-		comandos.agregar_usuario("ver_log","16");
-		
-		string codigo_comando = myHash.get_clave(comando);
-		
-		
+	while (strcmp(buffer,"conectarse")!=0 && strcmp(buffer,"salir")!=0 ) {
+		cout<<"No. Si deseas ingresar al SCS introduce el comando 'conectarse', si no, introduce el comando 'salir'."<<endl;
+		cout<<"\n"<<endl;
+		cin>>buffer;
+	}	
+	
+	if (strcmp(buffer,"salir")==0) 
+		return 0;
+	
+	cout<<"Bienvenido. Luego de ingresar al SCS si desea ver una lista de comandos disponiblen introduzca 'help'."<<endl;
+	cout<<"Por favor ingrese su nombre de usuario: ";
+	cin>>buffer;
+
 	/*cambios inicio*/
 	
 	
 	len = strlen(buffer);
 	
-	while (!regex_match (buffer, regex("[a-zA-Z0-9]+")) || len > 15 || len < 2) {
+	while (!regex_match(buffer, regex("(\\w)+")) || len > 15 || len < 2) {
 		cout<<"Por favor use solo letras y numeros."<<endl;
 		cout<<"Nombre de u¡suario no mayor a 15 caracteres."<<endl;
 		cout<<"Ingrese un nombre de usuario: ";
@@ -242,16 +277,38 @@ int main(int argc, char** argv){
 		cout<<"Error: mensaje no enviado."<<endl;
 		return 1;
 	}
-
+	char* numcom;
+	
 	while (1) {
 		cin.getline(buffer, BUFF_SIZE);
 		len = strlen(buffer);
 		if (len == 0) continue;
-		num = conexion.do_send(buffer, len);
-		if (num < 1) {
-			cout<<"Error: mensaje no enviado."<<endl;
-			break;
-		}
+		numcom = contenido_comando(buffer);
+		if (strcmp(numcom,"-1")!=0) {
+			if (strcmp(numcom,"07")==0) {
+				cout<<"\n"<<endl;
+				cout<<"Comandos disponibles: "<<endl;
+				cout<<"    - 'salir': ejecuta un logout del SCS."<<endl;
+				cout<<"    - 'entrar': entra a una sala activa en el SCS."<<endl;
+				cout<<"    - 'dejar': sale de la sala del SCS en la cual se encontraba."<<endl;
+				cout<<"    - 'ver_salas': muestra la lista de las salas activas en el SCS."<<endl;
+				cout<<"    - 'ver_usuarios': muestra la lista de usuarios declarados en el SCS."<<endl;
+				cout<<"    - 'ver_usu_salas': muestra la lista actual de usuarios suscritos a una sala del SCS."<<endl;
+				cout<<"\n"<<endl;
+			} else {
+				num = conexion.do_send(numcom, 2);
+				if (num < 1) {
+					cout<<"Error: mensaje no enviado."<<endl;
+					break;
+				}
+			}	
+		} else {
+			num = conexion.do_send(buffer, len);
+			if (num < 1) {
+				cout<<"Error: mensaje no enviado."<<endl;
+				break;
+			}
+		}	
 	}
 
 	cout<<"Conexion terminada. Programa finalizado.\n\n";
