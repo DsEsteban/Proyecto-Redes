@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "regex"
-//#include "hash.h"
 
 
 #define BUFF_SIZE 1024
@@ -259,10 +258,7 @@ int main(int argc, char** argv){
 	cout<<"Bienvenido. Luego de ingresar al SCS, si desea ver una lista de comandos disponibles, introduzca 'help'."<<endl;
 	cout<<"Por favor ingrese su nombre de usuario: ";
 	cin>>buffer;
-	
-	/*cambios inicio*/
-	//hash* comandos = new hash();
-		
+
 	/*cambios inicio*/
 	
 	
