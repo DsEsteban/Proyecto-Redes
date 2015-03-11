@@ -147,20 +147,22 @@ char* contenido_comando(char* buffer) {
 	char num_comando[3];
 	
     // Comandos no privilegiados
-	if (strcmp("salir", buffer)==0)
+	if (strcmp("conectarse", buffer)==0)
 		memcpy(num_comando, "00",3);
-	else if (strcmp("entrar", buffer)==0)
+	else if (strcmp("salir", buffer)==0)
 	    memcpy(num_comando, "01",3);
-	else if (strcmp(buffer,"dejar")==0)
-	    memcpy(num_comando, "02",3);
-	else if (strcmp(buffer,"ver_salas")==0)
-	    memcpy(num_comando, "03",3);
-	else if (strcmp(buffer,"ver_usuarios")==0)
-	    memcpy(num_comando, "04",3);
-	else if (strcmp(buffer,"ver_usu_salas")==0)
-	    memcpy(num_comando, "05",3);
 	else if (strcmp(buffer,"entrar")==0)
+	    memcpy(num_comando, "02",3);
+	else if (strcmp(buffer,"dejar")==0)
+	    memcpy(num_comando, "03",3);
+	else if (strcmp(buffer,"ver_salas")==0)
+	    memcpy(num_comando, "04",3);
+	else if (strcmp(buffer,"ver_usuarios")==0)
+	    memcpy(num_comando, "05",3);
+	else if (strcmp(buffer,"ver_usu_salas")==0)
 	    memcpy(num_comando, "06",3);
+	else if (strcmp(buffer,"help")==0)
+	    memcpy(num_comando,"07",3);
 	//Comandos privilegiados
 	else if (strcmp(buffer,"crear_usu")==0)
 	    memcpy(num_comando, "10",3);
@@ -240,7 +242,19 @@ int main(int argc, char** argv){
 	char buffer[BUFF_SIZE];
 	pthread_create(&recv_thread, NULL, &recv_fun, NULL);
 	
+	cout<<"Si deseas ingresar al SCS introduce el comando 'conectarse', si no, introduce el comando 'salir'."<<endl;
+	cin>>buffer;
+	
+	while (strcmp(buffer,"conectarse")!=0 && strcmp(buffer,"salir")!=0 ) {
+		cout<<"No. Si deseas ingresar al SCS introduce el comando 'conectarse', si no, introduce el comando 'salir'."<<endl;
+		cin>>buffer;
+	}	
+	
+	if (strcmp(buffer,"salir")==0) 
+		return 0;
+	
 	cout<<"Bienvenido."<<endl;
+	cout<<"Utilice el comando 'help' para ver una lista de comandos disponibles."<<endl;
 	cout<<"Por favor ingrese su nombre de usuario: ";
 	cin>>buffer;
 	
