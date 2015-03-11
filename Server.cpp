@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 #define BUFF_SIZE 1024
 #define MAX_CONN 200
@@ -274,6 +275,19 @@ int tcp_server::do_recv(char* data, int size, int n) {
 tcp_server conexion;
 pthread_mutex_t mutex;
 sala* salas[MAX_SALAS];
+char current_time[17];
+
+char *get_time(){
+	time_t rawtime = time(NULL);
+	tm *timeinfo = localtime (&rawtime);
+        sprintf( current_time, "%02d:%02d:%d:%02d:%02d",
+        	timeinfo->tm_mday,
+        	timeinfo->tm_mon+1,
+        	timeinfo->tm_year+1900,
+        	timeinfo->tm_hour,
+        	timeinfo->tm_min);
+       	return current_time;
+}
 
 void *recv_fun(void *client) {
 	int *n_client = (int*) client;
@@ -313,7 +327,7 @@ void *recv_fun(void *client) {
 		len = conexion.do_recv(buffer, BUFF_SIZE, *n_client);
 		if (len > 0) {
 			pthread_mutex_lock(&mutex);
-			cout<<cliente.user_name<<": "<<buffer<<endl;
+			cout<<get_time()<<" "<<cliente.user_name<<": "<<buffer<<endl;
 			pthread_mutex_unlock(&mutex);
 		} else {
 			pthread_mutex_lock(&mutex);

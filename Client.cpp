@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <regex>
+#include "hash.h"
+
 
 #define BUFF_SIZE 1024
 
@@ -197,6 +199,13 @@ int main(int argc, char** argv){
 	cout<<"Bienvenido."<<endl;
 	cout<<"Por favor ingrese su nombre de usuario: ";
 	cin>>buffer;
+	
+	/*cambios inicio*/
+		hash* comandos = new hash();
+		
+	/*cambios inicio*/
+	
+	
 	len = strlen(buffer);
 	
 	while (!regex_match (buffer, regex("[a-zA-Z0-9]+")) || len > 15 || len < 2) {
