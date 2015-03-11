@@ -228,7 +228,7 @@ int main(int argc, char** argv){
 	}
 	
 	if (!flagd || !flagp) {
-		cout<<"No se encontraron los paramatros requeridos."<<endl;
+		cout<<"No se encontraron los parametros requeridos."<<endl;
 		return 1;
 	}
 	
@@ -256,7 +256,7 @@ int main(int argc, char** argv){
 	if (strcmp(buffer,"salir")==0) 
 		return 0;
 	
-	cout<<"Bienvenido. Luego de ingresar al SCS si desea ver una lista de comandos disponiblen introduzca 'help'."<<endl;
+	cout<<"Bienvenido. Luego de ingresar al SCS, si desea ver una lista de comandos disponibles, introduzca 'help'."<<endl;
 	cout<<"Por favor ingrese su nombre de usuario: ";
 	cin>>buffer;
 	
@@ -270,7 +270,7 @@ int main(int argc, char** argv){
 	
 	while (!regex_match(buffer, regex("(\\w)+")) || len > 15 || len < 2) {
 		cout<<"Por favor use solo letras y numeros."<<endl;
-		cout<<"Nombre de u¡suario no mayor a 15 caracteres."<<endl;
+		cout<<"Nombre de usuario no mayor a 15 caracteres."<<endl;
 		cout<<"Ingrese un nombre de usuario: ";
 		cin>>buffer;
 		len = strlen(buffer);
